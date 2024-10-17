@@ -31,8 +31,6 @@ This template builds one library and multiple executables.
 AutoBuild(
     LIB_DIR "lib" SHARED   # Where to search for library source and headers
     BIN_DIR "bin"          # Where to search for executable source
-    PUBLIC_DEP   "glog::glog" "gflags"   # Public Dependencies (Re-exported)
-    PRIVATE_DEP  "nlohmann_json"         # Private Dependencies
 )
 ```
 
