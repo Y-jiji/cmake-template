@@ -1,3 +1,6 @@
+# CMake Build Dir
+build/
+
 # Prerequisites
 *.d
 
