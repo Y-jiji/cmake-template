@@ -15,6 +15,14 @@ cmake -S . -B build
 cmake --build build -j
 ```
 
+## Run Unit Tests
+
+You can also run unit tests for your library. 
+
+```shell
+ctest --test-dir build
+```
+
 ## Find Source Files
 
 This template builds one library and multiple executables. 
