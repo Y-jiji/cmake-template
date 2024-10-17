@@ -6,9 +6,12 @@ cmake_minimum_required(VERSION 3.16...3.27)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(tianji NO_POLICY_SCOPE)
 
-# -- Configure project compiler options
+# -- Your project name here
 
 project(my_project LANGUAGES CXX C)
+
+# -- Configure project compiler options
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS true)
