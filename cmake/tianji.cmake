@@ -1,6 +1,9 @@
 
 # -- Manage External Dependencies Using Git
 
+set(AUTO_PUBLIC_DEP)
+set(AUTO_PRIVATE_DEP)
+
 function(Execute)
     cmake_parse_arguments(EX "OUTPUT_QUIET;ERROR_QUIET" "WORKING_DIRECTORY;COMMAND_ERROR_IS_FATAL" "COMMAND" "${ARGV}")
     list(JOIN EX_COMMAND " " EX_COMMAND)
@@ -17,9 +20,9 @@ function(Git)
     cmake_parse_arguments(GH "HEADER_ONLY" "SITE;USER;REPO;BRANCH;PIPELINE;PACK;FLAGS;DIR" "" "${ARGV}")
     message(STATUS "GIT " ${GH_USER}/${GH_REPO} @ ${GH_BRANCH})
     # download package from Git
-    if (NOT EXISTS "${CMAKE_BINARY_DIR}/third_party/${GH_USER}/${GH_REPO}/.git")
+    if (NOT EXISTS "${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}/.git")
         Execute(
-            COMMAND                 git clone --quiet --depth 1 --branch "${GH_BRANCH}" "${GH_SITE}/${GH_USER}/${GH_REPO}" "${CMAKE_BINARY_DIR}/third_party/${GH_USER}/${GH_REPO}"
+            COMMAND                 git clone --quiet --depth 1 --branch "${GH_BRANCH}" "${GH_SITE}/${GH_USER}/${GH_REPO}" "${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}"
             WORKING_DIRECTORY       ${CMAKE_BINARY_DIR}
             COMMAND_ERROR_IS_FATAL  ANY
             OUTPUT_QUIET ERROR_QUIET
@@ -32,25 +35,25 @@ function(Git)
     if(${GH_PIPELINE} STREQUAL "CMAKE SUBDIR")
         set(CMAKE_MESSAGE_LOG_LEVEL__ ${CMAKE_MESSAGE_LOG_LEVEL})
         set(CMAKE_MESSAGE_LOG_LEVEL ERROR)
-        add_subdirectory(${CMAKE_BINARY_DIR}/third_party/${GH_USER}/${GH_REPO} EXCLUDE_FROM_ALL)
+        add_subdirectory(${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO} EXCLUDE_FROM_ALL)
         set(CMAKE_MESSAGE_LOG_LEVEL ${CMAKE_MESSAGE_LOG_LEVEL__})
     elseif(${GH_PIPELINE} STREQUAL "CMAKE INSTALL")
-        if (NOT EXISTS ${CMAKE_BINARY_DIR}/third_party/${GH_USER}/${GH_REPO}/build)
+        if (NOT EXISTS ${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}/build)
             Execute(
                 COMMAND                 cmake -S . -B build ${GH_FLAGS} 
                     -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}
                     -DCMAKE_INSTALL_BINDIR=bin
                     -DCMAKE_INSTALL_LIBDIR=lib
                     -DCMAKE_INSTALL_INCLUDEDIR=include
-                WORKING_DIRECTORY       ${CMAKE_BINARY_DIR}/third_party/${GH_USER}/${GH_REPO}
+                WORKING_DIRECTORY       ${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}
             )
             Execute(
                 COMMAND                 cmake --build build -j
-                WORKING_DIRECTORY       ${CMAKE_BINARY_DIR}/third_party/${GH_USER}/${GH_REPO}
+                WORKING_DIRECTORY       ${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}
             )
             Execute(
                 COMMAND                 cmake --build build --target install
-                WORKING_DIRECTORY       ${CMAKE_BINARY_DIR}/third_party/${GH_USER}/${GH_REPO}
+                WORKING_DIRECTORY       ${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}
             )
         endif()
         if(NOT ${GH_HEADER_ONLY} STREQUAL "TRUE")
@@ -60,27 +63,35 @@ function(Git)
         endif()
     elseif(${GH_PIPELINE} STREQUAL "AUTOMAKE INSTALL")
         # run the build command if it targeted directory don't exists
-        if(NOT EXISTS ${CMAKE_BINARY_DIR}/third_party/${GH_USER}/${GH_REPO}/install)
+        if(NOT EXISTS ${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}/install)
             Execute(
-                COMMAND                 ./autogen.sh --prefix ${CMAKE_BINARY_DIR}/third_party/${GH_USER}/${GH_REPO}/install
-                WORKING_DIRECTORY       ${CMAKE_BINARY_DIR}/third_party/${GH_USER}/${GH_REPO}
+                COMMAND                 ./autogen.sh --prefix ${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}/install
+                WORKING_DIRECTORY       ${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}
             )
             Execute(
                 COMMAND                 make install -j4
-                WORKING_DIRECTORY       ${CMAKE_BINARY_DIR}/third_party/${GH_USER}/${GH_REPO}
+                WORKING_DIRECTORY       ${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}
             )
         endif()
-        include_directories(${CMAKE_BINARY_DIR}/third_party/${GH_USER}/${GH_REPO}/install/include)
-        link_directories(${CMAKE_BINARY_DIR}/third_party/${GH_USER}/${GH_REPO}/install/lib)
+        include_directories(${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}/install/include)
+        link_directories(${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}/install/lib)
     else()
         message(FATAL_ERROR "UNKNOWN THIRD PARTY PIPELINE ${GH_PIPELINE}")
+    endif()
+    # add dependency to project
+    if(${GH_PUBLIC})
+        message(STATUS "+ " "add ${GH_PACK} as public dependency")
+        list(APPEND AUTO_PUBLIC_DEPS ${GH_PACK})
+    else()
+        message(STATUS "+ " "add ${GH_PACK} as private dependency")
+        list(APPEND AUTO_PRIVATE_DEPS ${GH_PACK})
     endif()
 endfunction()
 
 # -- Scan and Build
 
 function(AutoBuild)
-    cmake_parse_arguments(AUTO "STATIC;SHARED" "LIB_DIR;BIN_DIR" "PUBLIC_DEP;PRIVATE_DEP" "${ARGV}")
+    cmake_parse_arguments(AUTO "STATIC;SHARED" "LIB_DIR;BIN_DIR" "" "${ARGV}")
 
     # List Lib Source & Distinguish Unit Tests
     file(GLOB_RECURSE SRC ${AUTO_LIB_DIR}/*.cpp ${AUTO_LIB_DIR}/*.c ${AUTO_LIB_DIR}/*.cc)
@@ -121,6 +132,14 @@ function(AutoBuild)
         PUBLIC  ${AUTO_PUBLIC_DEP}
         PRIVATE ${AUTO_PRIVATE_DEP}
     )
+    set_target_properties(
+        ${CMAKE_PROJECT_NAME}
+        PROPERTIES
+        PUBLIC_HEADER ${INC}
+    )
+
+    include(GNUInstallDirs)
+    install(TARGETS ${CMAKE_PROJECT_NAME} PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${CMAKE_PROJECT_NAME})
 
     # Make Tests Suitable for `ctest`
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)

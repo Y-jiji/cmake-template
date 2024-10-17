@@ -1,6 +1,12 @@
 # CMake Build Dir
 build/
 
+# Installation Dir
+install/
+
+# Clangd Cache
+.cache/
+
 # Prerequisites
 *.d
 

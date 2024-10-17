@@ -38,7 +38,7 @@ Git(
     USER    "Rookfighter"
     REPO    "inifile-cpp"
     BRANCH  "main"
-    PIPELINE "CMAKE INSTALL" HEADER_ONLY
+    PIPELINE "CMAKE INSTALL" HEADER_ONLY PUBLIC
 )
 Git(
     SITE    "https://github.com"
@@ -46,29 +46,29 @@ Git(
     REPO    "json"
     PACK    "nlohmann_json"
     BRANCH  "v3.11.3"
-    PIPELINE "CMAKE INSTALL" FLAGS "-DJSON_BuildTests=OFF"
+    PIPELINE "CMAKE INSTALL" FLAGS "-DJSON_BuildTests=OFF" PRIVATE
 )
 Git(
     SITE    "https://github.com"
     USER    "gflags"
     REPO    "gflags"
     BRANCH  "v2.2.2"
-    PIPELINE "CMAKE INSTALL" FLAGS "-DBUILD_SHARED_LIBS=ON"
+    PIPELINE "CMAKE INSTALL" FLAGS "-DBUILD_SHARED_LIBS=ON" PUBLIC
 )
 Git(
     SITE    "https://github.com"
     USER    "google"
     REPO    "glog"
     BRANCH  "v0.7.0"
-    PIPELINE "CMAKE INSTALL" FLAGS "-Dgflags_DIR=${gflags_DIR}"
+    PIPELINE "CMAKE INSTALL" FLAGS "-Dgflags_DIR=${gflags_DIR}" PUBLIC
 )
 Git(
     SITE    "https://gitlab.com"
-    PACK    "Eigen3"
+    PACK    "Eigen3" 
     USER    "libeigen"
     REPO    "eigen"
     BRANCH  "3.4.0"
-    PIPELINE "CMAKE INSTALL" HEADER_ONLY
+    PIPELINE "CMAKE INSTALL" PUBLIC HEADER_ONLY
 )
 Git(
     SITE    "https://github.com"
@@ -81,8 +81,6 @@ Git(
 
 # -- Process Main Library & Unit Tests
 AutoBuild(
-    LIB_DIR "lib"
+    LIB_DIR "lib" SHARED
     BIN_DIR "bin"
-    SHARED
-    PUBLIC_DEP "glog::glog" "gflags"
 )
