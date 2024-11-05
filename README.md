@@ -36,9 +36,11 @@ AutoBuild(
 
 ## Fetch Dependencies
 
-> Note that the package name `PACK` is the one you place after `PUBLIC_DEP` or `PRIVATE_DEP` in `AutoBuild`. 
-
 You can declare a dependency `https://github.com/nlohmann/json` with package name `nlohmann_json`. 
+
+The `PRIVATE` flag will make the dependency private. You can also use `PUBLIC` flag. 
+
+The `FLAGS` feeds into the process that runs `CMAKE INSTALL`. 
 
 ```cmake
 Git(
@@ -47,9 +49,10 @@ Git(
     REPO    "json"
     PACK    "nlohmann_json"
     BRANCH  "v3.11.3"
-    PIPELINE "CMAKE INSTALL" FLAGS "-DJSON_BuildTests=OFF"
+    PIPELINE "CMAKE INSTALL" FLAGS "-DJSON_BuildTests=OFF" PRIVATE
 )
 ```
+
 
 ## Unit Tests
 
