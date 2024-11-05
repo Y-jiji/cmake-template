@@ -135,7 +135,7 @@ function(AutoBuild)
     set_target_properties(
         ${CMAKE_PROJECT_NAME}
         PROPERTIES
-        PUBLIC_HEADER ${INC}
+        PUBLIC_HEADER "${INC}"
     )
 
     include(GNUInstallDirs)
