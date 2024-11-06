@@ -1,8 +1,8 @@
 
 # -- Manage External Dependencies Using Git
 
-set(AUTO_PUBLIC_DEP)
-set(AUTO_PRIVATE_DEP)
+set(AUTO_PUBLIC_DEPS)
+set(AUTO_PRIVATE_DEPS)
 
 function(Execute)
     cmake_parse_arguments(EX "OUTPUT_QUIET;ERROR_QUIET" "WORKING_DIRECTORY;COMMAND_ERROR_IS_FATAL" "COMMAND" "${ARGV}")
@@ -129,8 +129,8 @@ function(AutoBuild)
     )
     target_link_libraries(
         ${CMAKE_PROJECT_NAME}
-        PUBLIC  ${AUTO_PUBLIC_DEP}
-        PRIVATE ${AUTO_PRIVATE_DEP}
+        PUBLIC  ${AUTO_PUBLIC_DEPS}
+        PRIVATE ${AUTO_PRIVATE_DEPS}
     )
     set_target_properties(
         ${CMAKE_PROJECT_NAME}
