@@ -19,10 +19,16 @@ endfunction()
 function(Git)
     cmake_parse_arguments(GH "HEADER_ONLY" "SITE;USER;REPO;BRANCH;PIPELINE;PACK;FLAGS;DIR" "" "${ARGV}")
     message(STATUS "GIT " ${GH_USER}/${GH_REPO} @ ${GH_BRANCH})
+    # support ssh
+    if ("${GH_SITE}" MATCHES "^git.*")
+        set(URL ${GH_SITE}:${GH_USER}/${GH_REPO})
+    else()
+        set(URL ${GH_SITE}/${GH_USER}/${GH_REPO})
+    endif()
     # download package from Git
     if (NOT EXISTS "${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}/.git")
         Execute(
-            COMMAND                 git clone --quiet --depth 1 --branch "${GH_BRANCH}" "${GH_SITE}/${GH_USER}/${GH_REPO}" "${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}"
+            COMMAND                 git clone --quiet --depth 1 --branch "${GH_BRANCH}" "${URL}" "${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}"
             WORKING_DIRECTORY       ${CMAKE_BINARY_DIR}
             COMMAND_ERROR_IS_FATAL  ANY
             OUTPUT_QUIET ERROR_QUIET
