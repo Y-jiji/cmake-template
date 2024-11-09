@@ -17,7 +17,7 @@ function(Execute)
 endfunction()
 
 function(Git)
-    cmake_parse_arguments(GH "HEADER_ONLY" "SITE;USER;REPO;BRANCH;PIPELINE;PACK;FLAGS;DIR" "" "${ARGV}")
+    cmake_parse_arguments(GH "HEADER_ONLY;PUBLIC;PRIVATE" "SITE;USER;REPO;BRANCH;PIPELINE;PACK;FLAGS;DIR" "" "${ARGV}")
     message(STATUS "GIT " ${GH_USER}/${GH_REPO} @ ${GH_BRANCH})
     # support ssh
     if ("${GH_SITE}" MATCHES "^git.*")
