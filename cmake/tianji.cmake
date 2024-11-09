@@ -38,7 +38,10 @@ function(Git)
         set(GH_PACK ${GH_REPO})
     endif()
     # configure how this package is added to current project
-    if(${GH_PIPELINE} STREQUAL "CMAKE SUBDIR")
+    if(${GH_PIPELINE} STREQUAL "INCLUDE ROOT")
+        # do nothing, but include it as header only library
+        include_directories(${CMAKE_BINARY_DIR}/3rd_party/${GH_USER})
+    elseif(${GH_PIPELINE} STREQUAL "CMAKE SUBDIR")
         set(CMAKE_MESSAGE_LOG_LEVEL__ ${CMAKE_MESSAGE_LOG_LEVEL})
         set(CMAKE_MESSAGE_LOG_LEVEL ERROR)
         add_subdirectory(${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO} EXCLUDE_FROM_ALL)
