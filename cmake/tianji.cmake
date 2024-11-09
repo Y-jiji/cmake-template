@@ -111,11 +111,13 @@ function(AutoBuild)
     list(REMOVE_ITEM SRC ${SRC_TEST}) # remove *.test.cpp and *.test.hpp from target
     list(REMOVE_ITEM INC ${INC_TEST})
 
-    # Copy Headers
+    # Copy Headers & Install Headers Manually
     foreach(F ${INC})
-        file(RELATIVE_PATH R ${CMAKE_CURRENT_SOURCE_DIR}/lib ${F})
+        file(RELATIVE_PATH R ${CMAKE_CURRENT_SOURCE_DIR}/${AUTO_LIB_DIR} ${F})
+        get_filename_component(D ${R} DIRECTORY)
         configure_file(${AUTO_LIB_DIR}/${R} include/${CMAKE_PROJECT_NAME}/${R} COPYONLY)
-    endforeach(F R)
+        install(FILES ${F} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${CMAKE_PROJECT_NAME}/${D})
+    endforeach(F R D)
 
     # Add current project as library
     if(${AUTO_STATIC})
@@ -141,14 +143,9 @@ function(AutoBuild)
         PUBLIC  ${AUTO_PUBLIC_DEPS}
         PRIVATE ${AUTO_PRIVATE_DEPS}
     )
-    set_target_properties(
-        ${CMAKE_PROJECT_NAME}
-        PROPERTIES
-        PUBLIC_HEADER "${INC}"
-    )
 
     include(GNUInstallDirs)
-    install(TARGETS ${CMAKE_PROJECT_NAME} PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${CMAKE_PROJECT_NAME})
+    install(TARGETS ${CMAKE_PROJECT_NAME})
 
     # Make Tests Suitable for `ctest`
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
