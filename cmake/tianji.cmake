@@ -16,24 +16,55 @@ function(Execute)
     )
 endfunction()
 
+function(CMakeInstall)
+    cmake_parse_arguments(CMI "HEADER_ONLY" "USER;REPO;PACK;FLAGS" "" "${ARGV}")
+    if (NOT EXISTS ${CMAKE_BINARY_DIR}/3rd_party/${CMI_USER}/${CMI_REPO}/build)
+        Execute(
+            COMMAND                 cmake -S . -B build ${CMI_FLAGS} 
+                -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}
+                -DCMAKE_INSTALL_BINDIR=bin
+                -DCMAKE_INSTALL_LIBDIR=lib
+                -DCMAKE_INSTALL_INCLUDEDIR=include
+            WORKING_DIRECTORY       ${CMAKE_BINARY_DIR}/3rd_party/${CMI_USER}/${CMI_REPO}
+        )
+    endif()
+    Execute(
+        COMMAND                 cmake --build build --target install
+        WORKING_DIRECTORY       ${CMAKE_BINARY_DIR}/3rd_party/${CMI_USER}/${CMI_REPO}
+    )
+    if(NOT ${CMI_HEADER_ONLY} STREQUAL "TRUE")
+        set(CMAKE_PREFIX_PATH "${CMAKE_BINARY_DIR}")
+        message(STATUS "+ FIND PACKAGE ${CMI_PACK}")
+        find_package(${CMI_PACK} REQUIRED QUIET)
+    endif()
+endfunction()
+
 function(Git)
     cmake_parse_arguments(GH "HEADER_ONLY;PUBLIC;PRIVATE" "SITE;USER;REPO;BRANCH;PIPELINE;PACK;FLAGS;DIR" "" "${ARGV}")
     message(STATUS "GIT " ${GH_USER}/${GH_REPO} @ ${GH_BRANCH})
-    # support ssh
+    # support for ssh
     if ("${GH_SITE}" MATCHES "^git.*")
         set(URL ${GH_SITE}:${GH_USER}/${GH_REPO})
     else()
         set(URL ${GH_SITE}/${GH_USER}/${GH_REPO})
     endif()
-    # download package from Git
+    # download package from using git clone
     if (NOT EXISTS "${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}/.git")
         Execute(
             COMMAND                 git clone --quiet --depth 1 --branch "${GH_BRANCH}" "${URL}" "${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}"
-            WORKING_DIRECTORY       ${CMAKE_BINARY_DIR}
+            WORKING_DIRECTORY       "${CMAKE_BINARY_DIR}"
+            COMMAND_ERROR_IS_FATAL  ANY
+            OUTPUT_QUIET ERROR_QUIET
+        )
+    else()
+        Execute(
+            COMMAND                 git pull
+            WORKING_DIRECTORY       "${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}"
             COMMAND_ERROR_IS_FATAL  ANY
             OUTPUT_QUIET ERROR_QUIET
         )
     endif()
+    # set default package name if it is empty
     if("${GH_PACK}" STREQUAL "")
         set(GH_PACK ${GH_REPO})
     endif()
@@ -47,29 +78,14 @@ function(Git)
         add_subdirectory(${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO} EXCLUDE_FROM_ALL)
         set(CMAKE_MESSAGE_LOG_LEVEL ${CMAKE_MESSAGE_LOG_LEVEL__})
     elseif(${GH_PIPELINE} STREQUAL "CMAKE INSTALL")
-        if (NOT EXISTS ${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}/build)
-            Execute(
-                COMMAND                 cmake -S . -B build ${GH_FLAGS} 
-                    -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}
-                    -DCMAKE_INSTALL_BINDIR=bin
-                    -DCMAKE_INSTALL_LIBDIR=lib
-                    -DCMAKE_INSTALL_INCLUDEDIR=include
-                WORKING_DIRECTORY       ${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}
-            )
-            Execute(
-                COMMAND                 cmake --build build -j
-                WORKING_DIRECTORY       ${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}
-            )
-            Execute(
-                COMMAND                 cmake --build build --target install
-                WORKING_DIRECTORY       ${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}
-            )
-        endif()
-        if(NOT ${GH_HEADER_ONLY} STREQUAL "TRUE")
-            set(CMAKE_PREFIX_PATH "${CMAKE_BINARY_DIR}")
-            message(STATUS "+ FIND PACKAGE ${GH_PACK}")
-            find_package(${GH_PACK} REQUIRED QUIET)
-        endif()
+        # install headers to given directory
+        CMakeInstall(
+            REPO    ${GH_REPO}
+            USER    ${GH_USER}
+            PACK    ${GH_PACK}
+            FLAGS   ${GH_FLAGS}
+            HEADER_ONLY ${GH_HEADER_ONLY}
+        )
     elseif(${GH_PIPELINE} STREQUAL "AUTOMAKE INSTALL")
         # run the build command if it targeted directory don't exists
         if(NOT EXISTS ${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}/install)
@@ -100,7 +116,7 @@ endfunction()
 # -- Scan and Build
 
 function(AutoBuild)
-    cmake_parse_arguments(AUTO "STATIC;SHARED" "LIB_DIR;BIN_DIR" "" "${ARGV}")
+    cmake_parse_arguments(AUTO "STATIC;SHARED;INTERFACE" "LIB_DIR;BIN_DIR" "" "${ARGV}")
 
     # List Lib Source & Distinguish Unit Tests
     file(GLOB_RECURSE SRC ${AUTO_LIB_DIR}/*.cpp ${AUTO_LIB_DIR}/*.c ${AUTO_LIB_DIR}/*.cc)
@@ -121,23 +137,38 @@ function(AutoBuild)
 
     # Add current project as library
     if(${AUTO_STATIC})
-        message(STATUS "SHARED LIBRARY ${CMAKE_PROJECT_NAME}")
+        message(STATUS "STATIC LIBRARY ${CMAKE_PROJECT_NAME}")
         add_library(${CMAKE_PROJECT_NAME} STATIC ${SRC})
     elseif(${AUTO_SHARED})
         message(STATUS "SHARED LIBRARY ${CMAKE_PROJECT_NAME}")
         add_library(${CMAKE_PROJECT_NAME} SHARED ${SRC})
+    elseif(${AUTO_INTERFACE})
+        message(STATUS "INTERFACE LIBRARY ${CMAKE_PROJECT_NAME}")
+        add_library(${CMAKE_PROJECT_NAME} INTERFACE ${SRC})
     else()
-        message(FATAL_ERROR "PLEASE ADD 'STATIC' OR 'SHARED' FOR LIB TYPE")
+        message(FATAL_ERROR "PLEASE ADD 'STATIC', 'INTERFACE' OR 'SHARED' FOR LIB TYPE")
     endif()
 
-    target_include_directories(
-        ${CMAKE_PROJECT_NAME}
-        PUBLIC  ${CMAKE_BINARY_DIR}/include
-    )
-    target_compile_features(
-        ${CMAKE_PROJECT_NAME}
-        PUBLIC cxx_std_20
-    )
+    if(${AUTO_INTERFACE})
+        target_include_directories(
+            ${CMAKE_PROJECT_NAME}
+            INTERFACE  ${CMAKE_BINARY_DIR}/include
+        )
+        target_compile_features(
+            ${CMAKE_PROJECT_NAME}
+            INTERFACE cxx_std_20
+        )
+    else()
+        target_include_directories(
+            ${CMAKE_PROJECT_NAME}
+            PUBLIC  ${CMAKE_BINARY_DIR}/include
+        )
+        target_compile_features(
+            ${CMAKE_PROJECT_NAME}
+            PUBLIC cxx_std_20
+        )
+    endif()
+
     target_link_libraries(
         ${CMAKE_PROJECT_NAME}
         PUBLIC  ${AUTO_PUBLIC_DEPS}
@@ -183,7 +214,7 @@ function(AutoBuild)
         file(RELATIVE_PATH R ${CMAKE_CURRENT_SOURCE_DIR}/${AUTO_BIN_DIR} ${F})
         string(REPLACE ".cpp" "" R ${R})
         add_executable(${R} ${F})
-        target_link_libraries(${R} PRIVATE ${CMAKE_PROJECT_NAME} Threads::Threads)
+        target_link_libraries(${R} PRIVATE ${CMAKE_PROJECT_NAME})
     endforeach(F R)
 
     unset(SRC)
