@@ -5,7 +5,7 @@ set(AUTO_PUBLIC_DEPS)
 set(AUTO_PRIVATE_DEPS)
 
 function(Execute)
-    cmake_parse_arguments(EX "OUTPUT_QUIET;ERROR_QUIET" "WORKING_DIRECTORY;COMMAND_ERROR_IS_FATAL" "COMMAND" "${ARGV}")
+    cmake_parse_arguments(EX "" "WORKING_DIRECTORY" "COMMAND" "${ARGV}")
     list(JOIN EX_COMMAND " " EX_COMMAND)
     message(STATUS "+ " ${EX_COMMAND})
     execute_process(
@@ -18,18 +18,16 @@ endfunction()
 
 function(CMakeInstall)
     cmake_parse_arguments(CMI "HEADER_ONLY" "USER;REPO;PACK;FLAGS" "" "${ARGV}")
-    if (NOT EXISTS ${CMAKE_BINARY_DIR}/3rd_party/${CMI_USER}/${CMI_REPO}/build)
-        Execute(
-            COMMAND                 cmake -S . -B build ${CMI_FLAGS} 
-                -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}
-                -DCMAKE_INSTALL_BINDIR=bin
-                -DCMAKE_INSTALL_LIBDIR=lib
-                -DCMAKE_INSTALL_INCLUDEDIR=include
-            WORKING_DIRECTORY       ${CMAKE_BINARY_DIR}/3rd_party/${CMI_USER}/${CMI_REPO}
-        )
-    endif()
     Execute(
-        COMMAND                 cmake --build build --target install
+        COMMAND                 cmake -S . -B build ${CMI_FLAGS} 
+            -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/3rd_party_build
+            -DCMAKE_INSTALL_BINDIR=bin
+            -DCMAKE_INSTALL_LIBDIR=lib
+            -DCMAKE_INSTALL_INCLUDEDIR=include
+        WORKING_DIRECTORY       ${CMAKE_BINARY_DIR}/3rd_party/${CMI_USER}/${CMI_REPO}
+    )
+    Execute(
+        COMMAND                 cmake --build build --target install -j
         WORKING_DIRECTORY       ${CMAKE_BINARY_DIR}/3rd_party/${CMI_USER}/${CMI_REPO}
     )
     if(NOT ${CMI_HEADER_ONLY} STREQUAL "TRUE")
@@ -51,17 +49,16 @@ function(Git)
     # download package from using git clone
     if (NOT EXISTS "${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}/.git")
         Execute(
-            COMMAND                 git clone --quiet --depth 1 --branch "${GH_BRANCH}" "${URL}" "${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}"
+            COMMAND                 git clone
+                --recurse-submodules -j8 --quiet --depth 1 
+                --branch "${GH_BRANCH}" "${URL}" 
+                "${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}"
             WORKING_DIRECTORY       "${CMAKE_BINARY_DIR}"
-            COMMAND_ERROR_IS_FATAL  ANY
-            OUTPUT_QUIET ERROR_QUIET
         )
     else()
         Execute(
             COMMAND                 git pull
             WORKING_DIRECTORY       "${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}"
-            COMMAND_ERROR_IS_FATAL  ANY
-            OUTPUT_QUIET ERROR_QUIET
         )
     endif()
     # set default package name if it is empty
@@ -75,7 +72,11 @@ function(Git)
     elseif(${GH_PIPELINE} STREQUAL "CMAKE SUBDIR")
         set(CMAKE_MESSAGE_LOG_LEVEL__ ${CMAKE_MESSAGE_LOG_LEVEL})
         set(CMAKE_MESSAGE_LOG_LEVEL ERROR)
-        add_subdirectory(${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO} EXCLUDE_FROM_ALL)
+        add_subdirectory(
+            ${CMAKE_BINARY_DIR}/3rd_party/${GH_USER}/${GH_REPO}
+            ${CMAKE_BINARY_DIR}/3rd_party_subdirs
+            EXCLUDE_FROM_ALL
+        )
         set(CMAKE_MESSAGE_LOG_LEVEL ${CMAKE_MESSAGE_LOG_LEVEL__})
     elseif(${GH_PIPELINE} STREQUAL "CMAKE INSTALL")
         # install headers to given directory
@@ -152,6 +153,10 @@ function(AutoBuild)
     if(${AUTO_INTERFACE})
         target_include_directories(
             ${CMAKE_PROJECT_NAME}
+            INTERFACE  ${CMAKE_BINARY_DIR}/3rd_party_build/include
+        )
+        target_include_directories(
+            ${CMAKE_PROJECT_NAME}
             INTERFACE  ${CMAKE_BINARY_DIR}/include
         )
         target_compile_features(
@@ -161,7 +166,11 @@ function(AutoBuild)
     else()
         target_include_directories(
             ${CMAKE_PROJECT_NAME}
-            PUBLIC  ${CMAKE_BINARY_DIR}/include
+            PUBLIC  ${CMAKE_BINARY_DIR}/3rd_party_build/include
+        )
+        target_include_directories(
+            ${CMAKE_PROJECT_NAME}
+            INTERFACE  ${CMAKE_BINARY_DIR}/include
         )
         target_compile_features(
             ${CMAKE_PROJECT_NAME}

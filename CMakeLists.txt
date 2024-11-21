@@ -45,14 +45,6 @@ Git(
 )
 Git(
     SITE    "https://github.com"
-    USER    "nlohmann"
-    REPO    "json"
-    PACK    "nlohmann_json"
-    BRANCH  "v3.11.3"
-    PIPELINE "CMAKE INSTALL" FLAGS "-DJSON_BuildTests=OFF" PRIVATE
-)
-Git(
-    SITE    "https://github.com"
     USER    "gflags"
     REPO    "gflags"
     BRANCH  "v2.2.2"
@@ -63,15 +55,7 @@ Git(
     USER    "google"
     REPO    "glog"
     BRANCH  "v0.7.0"
-    PIPELINE "CMAKE INSTALL" FLAGS "-Dgflags_DIR=${gflags_DIR}" PUBLIC
-)
-Git(
-    SITE    "https://gitlab.com"
-    PACK    "Eigen3" 
-    USER    "libeigen"
-    REPO    "eigen"
-    BRANCH  "3.4.0"
-    PIPELINE "CMAKE INSTALL" PUBLIC HEADER_ONLY
+    PIPELINE "CMAKE INSTALL" PUBLIC
 )
 Git(
     SITE    "https://github.com"
@@ -80,6 +64,21 @@ Git(
     BRANCH  "v1.14.0"
     PACK    "GTest"
     PIPELINE "CMAKE SUBDIR"
+)
+Git(
+    SITE    "https://github.com"
+    USER    "HDFGroup"
+    REPO    "hdf5"
+    BRANCH  "hdf5_1.14.5"
+    PIPELINE "CMAKE INSTALL" FLAGS "-DHDF5_INSTALL_CMAKE_DIR=${CMAKE_BINARY_DIR}/3rd_party_build/lib/cmake" PUBLIC
+)
+Git(
+    SITE    "https://github.com"
+    USER    "BlueBrain"
+    REPO    "HighFive"
+    BRANCH  "v3.0.0-beta1"
+    PACK    "HighFive"
+    PIPELINE "CMAKE INSTALL" FLAGS "-DHDF5_DIR=${CMAKE_BINARY_DIR}/3rd_party_build/lib" PUBLIC HEADER_ONLY
 )
 
 # -- Process Main Library & Unit Tests
