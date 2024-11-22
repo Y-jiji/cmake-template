@@ -179,7 +179,7 @@ function(Git)
         )
     elseif(${GH_PIPELINE} STREQUAL "AUTOMAKE INSTALL")
         # run the build command if it targeted directory don't exists
-        if(NOT EXISTS ${CMAKE_BINARY_DIR}/3rd_party_download/${GH_USER}/${GH_REPO}/install)
+        if(NOT EXISTS ${CMAKE_BINARY_DIR}/3rd_party_install/${GH_USER}/${GH_REPO})
             Execute(
                 COMMAND                 ./autogen.sh --prefix ${CMAKE_BINARY_DIR}/3rd_party_install/${GH_USER}/${GH_REPO}
                 WORKING_DIRECTORY       ${CMAKE_BINARY_DIR}/3rd_party_download/${GH_USER}/${GH_REPO}
