@@ -34,15 +34,15 @@ elseif(CMAKE_BUILD_TYPE MATCHES "Debug")
     add_compile_options(-O0 -ggdb -Werror -Wno-attributes -DDEBUG)
 endif()
 
+# -- Process Main Library & Unit Tests
+
+AutoBuild(
+    LIB_DIR "lib" SHARED
+    BIN_DIR "bin"
+)
+
 # -- Manage Third Party Dependencies
 
-Git(
-    SITE    "https://github.com"
-    USER    "Rookfighter"
-    REPO    "inifile-cpp"
-    BRANCH  "main"
-    PIPELINE "CMAKE INSTALL" HEADER_ONLY PUBLIC
-)
 Git(
     SITE    "https://github.com"
     USER    "gflags"
@@ -63,14 +63,63 @@ Git(
     REPO    "googletest"
     BRANCH  "v1.14.0"
     PACK    "GTest"
+    TARGET  "gtest"
     PIPELINE "CMAKE SUBDIR"
+)
+Git(
+    SITE    "https://github.com"
+    USER    "Rookfighter"
+    REPO    "inifile-cpp"
+    BRANCH  "main"
+    PIPELINE "INCLUDE"
+)
+Git(
+    SITE    "https://github.com"
+    USER    "nlohmann"
+    REPO    "json"
+    PACK    "nlohmann_json"
+    BRANCH  "v3.11.3"
+    PIPELINE "CMAKE INSTALL" FLAGS "-DJSON_BuildTests=OFF" PUBLIC
+)
+Git(
+    SITE    "https://gitlab.com"
+    USER    "libeigen"
+    REPO    "eigen"
+    PACK    "Eigen3" 
+    BRANCH  "3.4.0"
+    TARGET  "Eigen"
+    PIPELINE "CMAKE INSTALL" PUBLIC
+)
+Git(
+    SITE    "https://github.com"
+    USER    "wangyi-fudan"
+    REPO    "wyhash"
+    BRANCH  "wyhash_final4"
+    PIPELINE "INCLUDE" PUBLIC
+)
+Git(
+    SITE    "https://github.com"
+    USER    "Ten0"
+    REPO    "updatable_priority_queue"
+    BRANCH  "master"
+    PIPELINE "INCLUDE" PUBLIC
+)
+Git(
+    SITE    "https://github.com"
+    USER    "nmslib"
+    REPO    "hnswlib"
+    BRANCH  "v0.8.0"
+    PACK    "hnswlib"
+    TARGET  "hnswlib"
+    PIPELINE "CMAKE INSTALL" PUBLIC
 )
 Git(
     SITE    "https://github.com"
     USER    "HDFGroup"
     REPO    "hdf5"
     BRANCH  "hdf5_1.14.5"
-    PIPELINE "CMAKE INSTALL" FLAGS "-DHDF5_INSTALL_CMAKE_DIR=${CMAKE_BINARY_DIR}/3rd_party_build/lib/cmake" PUBLIC
+    PACK    "hdf5"
+    PIPELINE "CMAKE INSTALL" PUBLIC
 )
 Git(
     SITE    "https://github.com"
@@ -78,11 +127,6 @@ Git(
     REPO    "HighFive"
     BRANCH  "v3.0.0-beta1"
     PACK    "HighFive"
-    PIPELINE "CMAKE INSTALL" FLAGS "-DHDF5_DIR=${CMAKE_BINARY_DIR}/3rd_party_build/lib" PUBLIC HEADER_ONLY
-)
-
-# -- Process Main Library & Unit Tests
-AutoBuild(
-    LIB_DIR "lib" SHARED
-    BIN_DIR "bin"
+    TARGET  "HighFive"
+    PIPELINE "CMAKE INSTALL" FLAGS "-DHDF5_ROOT=${CMAKE_BINARY_DIR}/3rd_party_install/HDFGroup/hdf5" PUBLIC
 )
