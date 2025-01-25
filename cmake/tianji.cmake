@@ -14,8 +14,11 @@ function(AutoBuild)
     list(REMOVE_ITEM SRC ${SRC_TEST})
     list(REMOVE_ITEM INC ${INC_TEST})
     # Create Include Directory
+    file(REMOVE_RECURSE ${CMAKE_BINARY_DIR}/include/${CMAKE_PROJECT_NAME})
     file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/include/${CMAKE_PROJECT_NAME})
     # Configure Header
+    # + The header files are symbolicly linked to the build directory. 
+    # + So any changes that you did in the build directory is synchronized to your source file. 
     foreach(F ${INC})
         file(RELATIVE_PATH R ${CMAKE_CURRENT_SOURCE_DIR}/${AUTO_LIB_DIR} ${F})
         get_filename_component(D ${R} DIRECTORY)
