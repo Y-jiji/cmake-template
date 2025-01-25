@@ -2,9 +2,9 @@
 
 A template for c++ projects with cmake. 
 
-This is a template that I personally used for single artifact projects. 
+This is a template that I personally used for single library + multiple executable projects. 
 
-This template automates source file and dependency management. 
+It is suitable for most research projects, where we implement one library as the main artifact and multiple executables for experiments. 
 
 ## Get Started
 
@@ -52,7 +52,6 @@ Git(
     PIPELINE "CMAKE INSTALL" FLAGS "-DJSON_BuildTests=OFF" PRIVATE
 )
 ```
-
 
 ## Unit Tests
 
