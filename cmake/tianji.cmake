@@ -1,6 +1,6 @@
-
-
-# -- Scan Source and Configure Build
+#                                 #
+# Scan Source and Configure Build #
+#                                 #
 
 function(AutoBuild)
     cmake_parse_arguments(AUTO "STATIC;SHARED" "LIB_DIR;BIN_DIR" "" "${ARGV}")
@@ -35,22 +35,17 @@ function(AutoBuild)
     else()
         message(FATAL_ERROR "PLEASE ADD 'STATIC', 'INTERFACE' OR 'SHARED' FOR LIB TYPE")
     endif()
-
     # Configure Build Target Directory
     target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC ${CMAKE_BINARY_DIR}/include)
-
     # Configure Installation
     include(GNUInstallDirs)
     install(TARGETS ${CMAKE_PROJECT_NAME})
-
     # Make gtests available in`ctest` test framework
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-
     message(STATUS "SOURCE OF ${CMAKE_PROJECT_NAME}")
     foreach(F ${SRC})
         message(STATUS "+ " ${F})
     endforeach(F R)
-
     message(STATUS "UNIT TESTS")
     include(GoogleTest)
     foreach(F ${SRC_TEST}) # unit tests
@@ -63,13 +58,11 @@ function(AutoBuild)
         set_target_properties(${R} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Testing)
         gtest_add_tests(TARGET "${R}")
     endforeach(F N)
-
     # Remove source variables
     unset(SRC_TEST)
     unset(INC_TEST)
     unset(INC)
     unset(SRC)
-
     # Process executables
     file(GLOB_RECURSE SRC ${AUTO_BIN_DIR}/*.cpp)
     message(STATUS "EXECUTABLES")
@@ -81,10 +74,11 @@ function(AutoBuild)
         target_link_libraries(${R} PRIVATE ${CMAKE_PROJECT_NAME})
     endforeach(F R)
     unset(SRC)
-
 endfunction(AutoBuild)
 
-# -- Manage External Dependencies Using Git
+#                                        #
+# Manage External Dependencies Using Git #
+#                                        #
 
 function(Execute)
     cmake_parse_arguments(EX "" "WORKING_DIRECTORY" "COMMAND" "${ARGV}")
